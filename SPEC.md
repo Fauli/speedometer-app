@@ -219,7 +219,8 @@ No backend. No third-party SDKs that require keys/accounts for the core app.
 - **M1.1 — Polish:** ✅ Landscape / car-mount layout, unit-aware speed-color thresholds,
   light-theme status-bar contrast, derived-speed fallback (when the chipset gives no
   Doppler speed), and back-button handling out of Settings.
-- **M2 — Extras:** Speed alert, heading, altitude, acceleration timer, **analog dial style**.
+- **M2 — Extras:** ✅ Speed alert, heading, altitude all in M1; **analog dial style** now
+  selectable in Settings (Display: Digital / Analog). Acceleration timer still to do.
 - **M3 — Trips:** Recording + history + GPX/CSV export + saved per-trip graph (foreground service).
 - **M4 — Map & polish:** Route map, widget, settings depth. Optional speed-limit module.
 

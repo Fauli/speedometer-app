@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.franz.speedometer.data.DisplayStyle
 import com.franz.speedometer.data.SettingsState
 import com.franz.speedometer.data.SpeedUnit
 import com.franz.speedometer.data.ThemeMode
@@ -58,7 +59,40 @@ fun SettingsScreen(
             listOf("Auto" to ThemeMode.AUTO, "Light" to ThemeMode.LIGHT, "Night" to ThemeMode.NIGHT),
             settings.theme,
         ) { onChange(settings.copy(theme = it)) }
+        ChoiceRow(
+            "Display",
+            listOf("Digital" to DisplayStyle.DIGITAL, "Analog" to DisplayStyle.ANALOG),
+            settings.displayStyle,
+        ) { onChange(settings.copy(displayStyle = it)) }
         SwitchRow("Color by speed", settings.colorBySpeed) { onChange(settings.copy(colorBySpeed = it)) }
+        val u = settings.unit
+        val step = u.thresholdStep
+        StepperRow(
+            "Green below",
+            "${u.fromKmh(settings.colorLowKmh).roundToInt()} ${u.speedLabel}",
+            onMinus = {
+                val next = (u.fromKmh(settings.colorLowKmh) - step).coerceAtLeast(step)
+                onChange(settings.copy(colorLowKmh = u.toKmh(next)))
+            },
+            onPlus = {
+                val cap = u.fromKmh(settings.colorMidKmh) - step
+                val next = (u.fromKmh(settings.colorLowKmh) + step).coerceAtMost(cap)
+                onChange(settings.copy(colorLowKmh = u.toKmh(next)))
+            },
+        )
+        StepperRow(
+            "Amber below",
+            "${u.fromKmh(settings.colorMidKmh).roundToInt()} ${u.speedLabel}",
+            onMinus = {
+                val floor = u.fromKmh(settings.colorLowKmh) + step
+                val next = (u.fromKmh(settings.colorMidKmh) - step).coerceAtLeast(floor)
+                onChange(settings.copy(colorMidKmh = u.toKmh(next)))
+            },
+            onPlus = {
+                val next = (u.fromKmh(settings.colorMidKmh) + step).coerceAtMost(u.dialMax)
+                onChange(settings.copy(colorMidKmh = u.toKmh(next)))
+            },
+        )
         SwitchRow("HUD mirror mode", settings.hudMirror) { onChange(settings.copy(hudMirror = it)) }
         SwitchRow("Keep screen on", settings.keepScreenOn) { onChange(settings.copy(keepScreenOn = it)) }
         SwitchRow("Show live graph", settings.showGraph) { onChange(settings.copy(showGraph = it)) }

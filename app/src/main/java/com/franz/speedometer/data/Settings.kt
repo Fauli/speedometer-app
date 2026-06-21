@@ -19,15 +19,23 @@ enum class SpeedUnit(
     val speedFactor: Float,   // m/s -> unit
     val distFactor: Float,    // m   -> distance unit
     val distLabel: String,
-    val colorLow: Float,      // below this (in this unit) = green
-    val colorMid: Float,      // below this = amber; at/above = red
+    val dialMax: Float,       // analog dial full-scale (in this unit)
+    val tickStep: Float,      // analog dial labelled-tick spacing
+    val thresholdStep: Float, // +/- step when editing color thresholds (in this unit)
 ) {
-    KMH("km/h", 3.6f, 0.001f, "km", 50f, 100f),
-    MPH("mph", 2.2369363f, 0.000621371f, "mi", 30f, 60f),
-    KNOTS("kn", 1.9438445f, 0.000539957f, "NM", 10f, 25f),
+    KMH("km/h", 3.6f, 0.001f, "km", 220f, 20f, 5f),
+    MPH("mph", 2.2369363f, 0.000621371f, "mi", 140f, 20f, 5f),
+    KNOTS("kn", 1.9438445f, 0.000539957f, "NM", 60f, 10f, 2f);
+
+    /** Convert a canonical km/h value into this unit. */
+    fun fromKmh(kmh: Float): Float = kmh / 3.6f * speedFactor
+    /** Convert a value in this unit back to canonical km/h. */
+    fun toKmh(v: Float): Float = v / speedFactor * 3.6f
 }
 
 enum class ThemeMode { AUTO, LIGHT, NIGHT }
+
+enum class DisplayStyle { DIGITAL, ANALOG }
 
 /** Everything configurable from the Settings screen (§6.5 of SPEC.md). */
 data class SettingsState(
@@ -35,7 +43,10 @@ data class SettingsState(
     val unit: SpeedUnit = SpeedUnit.KMH,
     val decimals: Int = 0,
     val theme: ThemeMode = ThemeMode.AUTO,
+    val displayStyle: DisplayStyle = DisplayStyle.DIGITAL,
     val colorBySpeed: Boolean = true,
+    val colorLowKmh: Float = 50f,   // green below this (canonical km/h)
+    val colorMidKmh: Float = 100f,  // amber below this; red at/above
     val hudMirror: Boolean = false,
     val keepScreenOn: Boolean = true,
     val showGraph: Boolean = true,
@@ -66,7 +77,10 @@ class SettingsRepository(private val context: Context) {
         val unit = stringPreferencesKey("unit")
         val decimals = intPreferencesKey("decimals")
         val theme = stringPreferencesKey("theme")
+        val displayStyle = stringPreferencesKey("displayStyle")
         val colorBySpeed = booleanPreferencesKey("colorBySpeed")
+        val colorLowKmh = floatPreferencesKey("colorLowKmh")
+        val colorMidKmh = floatPreferencesKey("colorMidKmh")
         val hudMirror = booleanPreferencesKey("hudMirror")
         val keepScreenOn = booleanPreferencesKey("keepScreenOn")
         val showGraph = booleanPreferencesKey("showGraph")
@@ -93,7 +107,10 @@ class SettingsRepository(private val context: Context) {
             unit = p[Keys.unit]?.let { runCatching { SpeedUnit.valueOf(it) }.getOrNull() } ?: d.unit,
             decimals = p[Keys.decimals] ?: d.decimals,
             theme = p[Keys.theme]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: d.theme,
+            displayStyle = p[Keys.displayStyle]?.let { runCatching { DisplayStyle.valueOf(it) }.getOrNull() } ?: d.displayStyle,
             colorBySpeed = p[Keys.colorBySpeed] ?: d.colorBySpeed,
+            colorLowKmh = p[Keys.colorLowKmh] ?: d.colorLowKmh,
+            colorMidKmh = p[Keys.colorMidKmh] ?: d.colorMidKmh,
             hudMirror = p[Keys.hudMirror] ?: d.hudMirror,
             keepScreenOn = p[Keys.keepScreenOn] ?: d.keepScreenOn,
             showGraph = p[Keys.showGraph] ?: d.showGraph,
@@ -121,7 +138,10 @@ class SettingsRepository(private val context: Context) {
             p[Keys.unit] = s.unit.name
             p[Keys.decimals] = s.decimals
             p[Keys.theme] = s.theme.name
+            p[Keys.displayStyle] = s.displayStyle.name
             p[Keys.colorBySpeed] = s.colorBySpeed
+            p[Keys.colorLowKmh] = s.colorLowKmh
+            p[Keys.colorMidKmh] = s.colorMidKmh
             p[Keys.hudMirror] = s.hudMirror
             p[Keys.keepScreenOn] = s.keepScreenOn
             p[Keys.showGraph] = s.showGraph
